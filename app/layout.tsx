@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
+import { PersonProvider } from "@/contexts/PersonContext"
+import { fakeData } from "@/data/fake-data" // Move your fake data to a separate file
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,15 +22,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <PersonProvider initialData={fakeData}>
+          {children}
+          <Toaster position="top-right" />
+        </PersonProvider>
       </body>
     </html>
   );
