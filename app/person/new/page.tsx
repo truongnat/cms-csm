@@ -14,9 +14,12 @@ import { Person } from "@/types/person"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DatePicker } from "@/components/ui/date-picker"
+import { DateInput } from "@/components/ui/date-input";
+import { formatDate } from "@/lib/utils/date";
 import { Plus, Trash2 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import LocationSelector from "@/components/location-selector"
+import { DatePicker } from "@/components/ui/date-picker"
 
 const formSchema = z.object({
   // Required fields
@@ -27,7 +30,7 @@ const formSchema = z.object({
   ethnicity: z.string().min(1, "Vui lòng nhập dân tộc"),
   religion: z.string().min(1, "Vui lòng nhập tôn giáo"),
   hometown: z.string().min(2, "Quê quán không được để trống"),
-  
+
   // Education fields
   education: z.string().min(1, "Vui lòng nhập trình độ học vấn"),
   educationDetail: z.object({
@@ -143,11 +146,11 @@ export default function NewPerson() {
     defaultValues: {
       fullName: "",
       dateOfBirth: "",
-      hometown: "",
+      hometown: "", // Changed to string
       position: "",
       unit: "",
-      ethnicity: "",
-      religion: "",
+      ethnicity: "Kinh",    // Set default value
+      religion: "Không",    // Set default value
       education: "",
       unionMember: false,
       partyMember: false,
@@ -178,16 +181,36 @@ export default function NewPerson() {
         reason: undefined
       },
       children: [],
+      educationDetail: {
+        level: "high_school",
+        grade: undefined,
+        programType: "",
+        startYear: undefined,
+        endYear: undefined,
+        schoolName: "", // Initialize with empty string instead of undefined
+      },
+      parentsMaritalStatus: {
+        status: 'together',
+        separationDate: undefined,
+        divorceDate: undefined,
+        reason: undefined,
+        childrenLivingWith: undefined,
+        livingWithDetails: undefined
+      }
     },
   });
 
   const onSubmit = async (values: FormValues) => {
+    console.log("onSubmit called");
+    console.log("Form Values:", values);
+    console.log("Form State:", form.formState);
+    console.log("Is Form Valid:", form.formState.isValid);
+    console.log("Is Form Submitting:", form.formState.isSubmitting);
+    console.log("Submit Count:", form.formState.submitCount);
+
     try {
-      const newPerson = {
-        id: Math.max(...persons.map(p => p.id), 0) + 1,
-        orderNumber: Math.max(...persons.map(p => p.orderNumber), 0) + 1,
-        department: values.unit, // Using the unit field as department
-        ...values,
+      // Convert date strings to Date objects
+      const dateFields = {
         dateOfBirth: new Date(values.dateOfBirth),
         fatherDateOfBirth: new Date(values.fatherDateOfBirth),
         motherDateOfBirth: new Date(values.motherDateOfBirth),
@@ -195,12 +218,28 @@ export default function NewPerson() {
         partyJoinDate: values.partyJoinDate ? new Date(values.partyJoinDate) : undefined,
       };
 
-      setPersons(prev => [...prev, newPerson as Person]);
+      // Create new person object
+      const newPerson: Person = {
+        id: Math.max(...persons.map(p => p.id), 0) + 1,
+        orderNumber: Math.max(...persons.map(p => p.orderNumber), 0) + 1,
+        department: values.unit,
+        ...values,
+        ...dateFields,
+      };
+
+      console.log("New Person Object:", newPerson);
+
+      // Update persons context
+      setPersons(prev => [...prev, newPerson]);
+
+      // Show success message
       toast.success("Thêm thông tin thành công");
+
+      // Navigate back to home page
       router.push("/");
     } catch (error) {
+      console.error("Error submitting form:", error);
       toast.error("Có lỗi xảy ra khi thêm thông tin");
-      console.error(error);
     }
   };
 
@@ -222,7 +261,13 @@ export default function NewPerson() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form
+            onSubmit={(e) => {
+              console.log("Form submission attempted");
+              form.handleSubmit(onSubmit)(e);
+            }}
+            className="space-y-8"
+          >
             {/* Thông tin cơ bản - Required */}
             <Card>
               <CardHeader>
@@ -250,7 +295,10 @@ export default function NewPerson() {
                       <FormItem>
                         <FormLabel>Ngày sinh <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <DatePicker {...field} />
+                          <DateInput 
+                            value={field.value ? formatDate(field.value) : ""} 
+                            onChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -288,6 +336,43 @@ export default function NewPerson() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Đơn vị <span className="text-red-500">*</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Thông tin cơ bản - Required */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin cơ bản</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="ethnicity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dân tộc <span className="text-red-500">*</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="religion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tôn giáo <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -426,7 +511,7 @@ export default function NewPerson() {
                       <FormItem>
                         <FormLabel>Ngày vào Đoàn <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <DatePicker {...field} />
+                          <Input {...field} placeholder="dd/mm/yyyy" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -456,7 +541,7 @@ export default function NewPerson() {
                       <FormItem>
                         <FormLabel>Ngày vào Đảng <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <DatePicker {...field} />
+                          <Input {...field} placeholder="dd/mm/yyyy" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -478,7 +563,7 @@ export default function NewPerson() {
                     name="fatherName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Họ và tên <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>Họ và tên bố <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -493,7 +578,7 @@ export default function NewPerson() {
                       <FormItem>
                         <FormLabel>Ngày sinh <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <DatePicker {...field} />
+                          <Input {...field} placeholder="dd/mm/yyyy" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -540,7 +625,7 @@ export default function NewPerson() {
                           <FormItem>
                             <FormLabel>Ngày mất</FormLabel>
                             <FormControl>
-                              <DatePicker {...field} />
+                              <Input {...field} placeholder="dd/mm/yyyy" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -566,7 +651,7 @@ export default function NewPerson() {
                     name="motherName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Họ và tên <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>Họ và tên mẹ <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -581,7 +666,7 @@ export default function NewPerson() {
                       <FormItem>
                         <FormLabel>Ngày sinh <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <DatePicker {...field} />
+                          <Input {...field} placeholder="dd/mm/yyyy" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -628,7 +713,7 @@ export default function NewPerson() {
                           <FormItem>
                             <FormLabel>Ngày mất</FormLabel>
                             <FormControl>
-                              <DatePicker {...field} />
+                              <Input {...field} placeholder="dd/mm/yyyy" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -663,7 +748,17 @@ export default function NewPerson() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={(value) => {
+                          if (value) {
+                            form.setValue("parentsMaritalStatus", {
+                              ...form.getValues("parentsMaritalStatus"),
+                              status: value as "together" | "separated" | "divorced"
+                            });
+                          }
+                        }}
+                        value={field.value || ""}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn trạng thái" />
                         </SelectTrigger>
@@ -678,51 +773,15 @@ export default function NewPerson() {
                   )}
                 />
 
-                {(form.watch("parentsMaritalStatus.status") === "separated" || 
+                {(form.watch("parentsMaritalStatus.status") === "separated" ||
                   form.watch("parentsMaritalStatus.status") === "divorced") && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="parentsMaritalStatus.reason"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Lý do</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="parentsMaritalStatus.childrenLivingWith"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Con cái sống cùng</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn người giám hộ" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="father">Bố</SelectItem>
-                              <SelectItem value="mother">Mẹ</SelectItem>
-                              <SelectItem value="other">Khác</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch("parentsMaritalStatus.childrenLivingWith") === "other" && (
+                    <>
                       <FormField
                         control={form.control}
-                        name="parentsMaritalStatus.livingWithDetails"
+                        name="parentsMaritalStatus.reason"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Chi tiết</FormLabel>
+                            <FormLabel>Lý do</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -730,9 +789,45 @@ export default function NewPerson() {
                           </FormItem>
                         )}
                       />
-                    )}
-                  </>
-                )}
+
+                      <FormField
+                        control={form.control}
+                        name="parentsMaritalStatus.childrenLivingWith"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Con cái sống cùng</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn người giám hộ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="father">Bố</SelectItem>
+                                <SelectItem value="mother">Mẹ</SelectItem>
+                                <SelectItem value="other">Khác</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {form.watch("parentsMaritalStatus.childrenLivingWith") === "other" && (
+                        <FormField
+                          control={form.control}
+                          name="parentsMaritalStatus.livingWithDetails"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Chi tiết</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
               </div>
             </div>
 
@@ -787,7 +882,7 @@ export default function NewPerson() {
                             <FormItem>
                               <FormLabel>Ngày sinh</FormLabel>
                               <FormControl>
-                                <DatePicker {...field} />
+                                <Input {...field} placeholder="dd/mm/yyyy" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -813,7 +908,7 @@ export default function NewPerson() {
                             <FormItem>
                               <FormLabel>Ngày kết hôn</FormLabel>
                               <FormControl>
-                                <DatePicker {...field} />
+                                <Input {...field} placeholder="dd/mm/yyyy" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -885,7 +980,7 @@ export default function NewPerson() {
                             size="sm"
                             onClick={() => {
                               const currentChildren = form.watch("children") || [];
-                              form.setValue("children", 
+                              form.setValue("children",
                                 currentChildren.filter((_, i) => i !== index)
                               );
                             }}
@@ -914,7 +1009,7 @@ export default function NewPerson() {
                               <FormItem>
                                 <FormLabel>Ngày sinh</FormLabel>
                                 <FormControl>
-                                  <DatePicker {...field} />
+                                  <Input {...field} placeholder="dd/mm/yyyy" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1285,6 +1380,19 @@ export default function NewPerson() {
             </Card>
 
             <div className="flex justify-end space-x-4">
+              {process.env.NODE_ENV === 'development' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    console.log('Current Form State:', form.getValues());
+                    console.log('Form Errors:', form.formState.errors);
+                    console.log('Dirty Fields:', form.formState.dirtyFields);
+                  }}
+                >
+                  Debug Form
+                </Button>
+              )}
               <Button type="button" variant="outline" onClick={() => router.back()}>
                 Hủy
               </Button>

@@ -37,7 +37,7 @@ export function BasicInformation({ control }: BasicInformationProps) {
               <FormItem>
                 <FormLabel>Ngày sinh <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <DatePicker field={field} />
+                  <Input {...field} placeholder="dd/mm/yyyy" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

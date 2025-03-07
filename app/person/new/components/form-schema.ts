@@ -15,10 +15,10 @@ export const formSchema = z.object({
   educationDetail: z.object({
     level: z.enum(["high_school", "college", "university"]),
     grade: z.number().optional(),
-    programType: z.string().optional(),
+    programType: z.string(),
     startYear: z.number().optional(),
     endYear: z.number().optional(),
-    schoolName: z.string().optional(),
+    schoolName: z.string(),
   }).optional(),
 
   // Union/Party fields
@@ -41,6 +41,16 @@ export const formSchema = z.object({
   motherStatus: z.enum(["alive", "deceased"]),
   motherDeathDate: z.string().optional(),
   motherDeathReason: z.string().optional(),
+
+  // Parents Marital Status - make it completely optional
+  parentsMaritalStatus: z.object({
+    status: z.enum(["together", "separated", "divorced"]).optional(),
+    separationDate: z.string().optional(),
+    divorceDate: z.string().optional(),
+    reason: z.string().optional(),
+    childrenLivingWith: z.enum(["father", "mother", "other"]).optional(),
+    livingWithDetails: z.string().optional(),
+  }).optional(), // Make the entire object optional
 
   // Spouse information
   spouse: z.object({

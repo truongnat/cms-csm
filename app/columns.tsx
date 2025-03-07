@@ -3,8 +3,7 @@
 import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Person } from "@/types/person"
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
+import { formatDate } from "@/lib/utils/date"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2 } from "lucide-react"
 import { DeleteDialog } from "@/components/delete-dialog"
@@ -25,7 +24,7 @@ export const createColumns = ({ onDelete }: ColumnOptions = {}): ColumnDef<Perso
         <div className="flex flex-col">
           <span className="font-medium">{name}</span>
           <span className="text-muted-foreground">
-            {format(date, "dd/MM/yyyy", { locale: vi })}
+            {formatDate(date)}
           </span>
         </div>
       )
@@ -45,7 +44,7 @@ export const createColumns = ({ onDelete }: ColumnOptions = {}): ColumnDef<Perso
           <span>Có</span>
           {joinDate && (
             <span className="text-muted-foreground text-sm">
-              {format(joinDate, "dd/MM/yyyy", { locale: vi })}
+              {formatDate(joinDate)}
             </span>
           )}
         </div>
@@ -66,7 +65,7 @@ export const createColumns = ({ onDelete }: ColumnOptions = {}): ColumnDef<Perso
           <span>Có</span>
           {joinDate && (
             <span className="text-muted-foreground text-sm">
-              {format(joinDate, "dd/MM/yyyy", { locale: vi })}
+              {formatDate(joinDate)}
             </span>
           )}
         </div>
